@@ -19,6 +19,7 @@ type ConstructorOptions = {|
   accessToken?: string,
   channelSecret?: string,
   client?: LineClient,
+  mapDestinationToAccessToken?: (destination: string) => Promise<string>,
   shouldBatch: ?boolean,
   sendMethod: ?string,
   origin?: string,
@@ -29,6 +30,8 @@ export default class LineConnector implements Connector<LineRequestBody> {
 
   _channelSecret: string;
 
+  _mapDestinationToAccessToken: ?(destination: string) => Promise<string>;
+
   _shouldBatch: ?boolean;
 
   _sendMethod: ?string;
@@ -37,6 +40,7 @@ export default class LineConnector implements Connector<LineRequestBody> {
     accessToken,
     channelSecret,
     client,
+    mapDestinationToAccessToken,
     shouldBatch,
     sendMethod,
     origin,
@@ -48,6 +52,9 @@ export default class LineConnector implements Connector<LineRequestBody> {
         origin,
       });
     this._channelSecret = channelSecret || '';
+
+    this._mapDestinationToAccessToken = mapDestinationToAccessToken;
+
     this._shouldBatch = shouldBatch || false;
     warning(
       !sendMethod || sendMethod === 'reply' || sendMethod === 'push',
@@ -225,8 +232,8 @@ export default class LineConnector implements Connector<LineRequestBody> {
 
   mapRequestToEvents(body: LineRequestBody): Array<LineEvent> {
     return body.events
-      .filter(e => !this._isWebhookVerifyEvent(e))
-      .map(e => new LineEvent(e));
+      .filter(rawEvent => !this._isWebhookVerifyEvent(rawEvent))
+      .map(rawEvent => new LineEvent(rawEvent));
   }
 
   createContext(params: {
@@ -235,9 +242,15 @@ export default class LineConnector implements Connector<LineRequestBody> {
     initialState: ?Object,
     requestContext: ?Object,
   }): LineContext {
+    let customAccessToken;
+    if (this._mapDestinationToAccessToken) {
+      // FIXME: how to get destination here?
+    }
+
     return new LineContext({
       ...params,
       client: this._client,
+      customAccessToken,
       shouldBatch: this._shouldBatch,
       sendMethod: this._sendMethod,
     });

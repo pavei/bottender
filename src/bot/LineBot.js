@@ -12,6 +12,7 @@ export default class LineBot extends Bot {
     sessionStore,
     origin,
     sync,
+    mapDestinationToAccessToken,
     shouldBatch,
     sendMethod,
   }: {
@@ -19,6 +20,7 @@ export default class LineBot extends Bot {
     channelSecret: string,
     sessionStore: SessionStore,
     sync?: boolean,
+    mapDestinationToAccessToken?: (destination: string) => Promise<string>,
     shouldBatch: ?boolean,
     sendMethod: ?string,
     origin?: string,
@@ -26,6 +28,7 @@ export default class LineBot extends Bot {
     const connector = new LineConnector({
       accessToken,
       channelSecret,
+      mapDestinationToAccessToken,
       shouldBatch,
       sendMethod,
       origin,
